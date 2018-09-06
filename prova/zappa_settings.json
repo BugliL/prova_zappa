@@ -5,6 +5,16 @@
         "profile_name": "zappa",
         "project_name": "task1",
         "runtime": "python3.6",
-        "s3_bucket": "zappa-django-test1"
+        "s3_bucket": "zappa-django-test1",
+        "vpc_config" : {
+            "SubnetIds": [
+                "subnet-61039507",
+                "subnet-207f1e68",
+                "subnet-d48e5d8e",
+            ],
+            "SecurityGroupIds": [
+                "sg-0ea96eeaaaa99c497" 
+            ]
+        }
     }
 }

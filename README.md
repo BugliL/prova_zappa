@@ -209,3 +209,19 @@ Unscheduled task1-dev-zappa-keep-warm-handler.keep_warm_callback.
 Scheduled task1-dev-zappa-keep-warm-handler.keep_warm_callback with expression rate(4 minutes)!
 Deployment complete!: https://tqltu05s5i.execute-api.eu-west-1.amazonaws.com/dev
 ```
+*at this point, Django Core Deployment, is completed, in next steps i will describe the procedure to add DB and how to serve static files*
+
+## Setup database connection (PostGres SQL)
+First of all we need the engine to use postGres SQL
+```bash
+(ve) bash-4.2# pip install
+```
+
+### Create database in AWS
+First of all you need to create a DB in AWS, I will use postGres SQL [https://eu-west-1.console.aws.amazon.com/rds](https://eu-west-1.console.aws.amazon.com/rds)
+You should record some key information we'll need here:
+ - The username and password for the root user
+ - The subnets (there should be at least two) in which we can access the database
+ - The endpoint (hostname) of the database and the port
+
+All data are provided selecting the database instance in the AWS RDS section
