@@ -212,9 +212,10 @@ Deployment complete!: https://tqltu05s5i.execute-api.eu-west-1.amazonaws.com/dev
 *at this point, Django Core Deployment, is completed, in next steps i will describe the procedure to add DB and how to serve static files*
 
 ## Setup database connection (PostGres SQL)
-First of all we need the engine to use postGres SQL
+First of all we need the engine to use postGres SQL:
+because the psycopg2 library often involves compiling the library, I would suggest using the Docker version of zappa to ensure you have isolation of environments and you don't mess up your local system.
 ```bash
-(ve) bash-4.2# pip install
+(ve) bash-4.2# pip install psycopg2
 ```
 
 ### Create database in AWS
@@ -225,3 +226,100 @@ You should record some key information we'll need here:
  - The endpoint (hostname) of the database and the port
 
 All data are provided selecting the database instance in the AWS RDS section
+
+*** BE CAREFUL ***
+I've encoutered some issues on the RDS DB instance from the lambda section.
+The main issue is on configuring the VPC with rigth FW rules
+
+| Type           | Protocol | Port Range |      Source        |
+|----------------|----------|------------|--------------------|
+|PostgreSQL      |  TCP (6) |5432        |sg-xxxxxxxxxxxxxxxxx|
+
+This rule is needed to let Lambda access the database, open the whole range associated with the security group because when a lambda container is created, it could take any free address in the subnet range.
+
+### Config zappa_settings.json
+Now we add the VPC configuration to our Zappa settings file so that the lambda functions can connect to the database
+```json
+{
+    "dev": {
+
+        "vpc_config" : {
+            "SubnetIds": [
+                "subnet-AAAAAAAA",
+                "subnet-BBBBBBBB",
+                "subnet-CCCCCCCC",
+            ],
+            "SecurityGroupIds": [
+                "sg-xxxxxxxxxxxxxxxxx"
+            ]
+        }
+    }
+}
+```
+
+### Config Django db connection
+Standard Django database connection config
+```python
+import secret
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'zappadjangodb',
+        'USER': secret.DB_DATA['USER'],
+        'PASSWORD': secret.DB_DATA['PASSWORD'],
+        'HOST': secret.DB_DATA['HOST'],
+        'PORT': '5432',
+    }
+}
+```
+Secret is a python file escluded from this package that contains passwords and stuff
+that must be secret or just escluded from commit.
+
+### Init the database
+the easiest method to init the database is using zappa django utils
+```bash
+(ve) bash-4.2# pip install zappa-django-utils
+```
+The package must be added to installed App to work
+```python
+INSTALLED_APPS += ['zappa_django_utils']
+```
+Standard makemigrations and update
+```bash
+(ve) bash-4.2# python manage.py makemigrations
+(ve) bash-4.2# zappa update dev
+```
+
+**I HAVE NO CLUE ABOUT IT**
+I have tried the zappa manage dev create_pg_db but it didn't worked, I will figure out later what's the problem here.
+
+## Static files
+Generally if you'd like to use your Django project to present a User Interface (UI) then you'll need to display Images and CSS and serve Javascript files. These are known as static files and to deliver them using Zappa is unlike the traditional method of hosting the static files on a Linux or Windows box.
+
+### Configure Django Project
+In order to re-use existing modules freely available, we will use the django-storages module to handle the management of files to and from AWS S3. So first you must install it.
+```bash
+(ve) bash-4.2# pip install django-storages boto
+```
+Add Django-Storages to the INSTALLED_APPS in settings.py
+```python
+INSTALLED_APPS += ['storages']
+```
+Add these lines anywhere in your settings.py. These values instruct Django-Storages to properly configure a basic setup for leveraging S3.
+(full documentation (http://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html)[http://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html])
+```python
+AWS_STORAGE_BUCKET_NAME = 'zappa-static'
+AWS_S3_CUSTOM_DOMAIN = '%s.s3.amazonaws.com' % AWS_STORAGE_BUCKET_NAME
+STATIC_URL = "https://%s/" % AWS_S3_CUSTOM_DOMAIN
+STATICFILES_STORAGE = 'storages.backends.s3boto.S3BotoStorage'
+```
+I'm using the same zappa bucket because zappa already configured it to work (even the original tutorial says the opposite)
+```bash
+(ve) bash-4.2# python manage.py collectstatic --noinput
+
+119 static files copied.
+(ve) bash-4.2#
+```
+All files were loaded in the S3 bucket, we need to update the server to work
+```bash
+```

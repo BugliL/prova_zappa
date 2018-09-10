@@ -3,9 +3,9 @@
         "aws_region": "eu-west-1",
         "django_settings": "prova.settings",
         "profile_name": "zappa",
-        "project_name": "task1",
+        "project_name": "prova",
         "runtime": "python3.6",
-        "s3_bucket": "zappa-django-test1",
+        "s3_bucket": "zappa-6bur1g5a1"
         "vpc_config" : {
             "SubnetIds": [
                 "subnet-61039507",
@@ -13,8 +13,9 @@
                 "subnet-d48e5d8e",
             ],
             "SecurityGroupIds": [
-                "sg-0ea96eeaaaa99c497" 
-            ]
+                "sg-0ea96eeaaaa99c497",
+            	"sg-08eec4defcddd66b1"
+	    ]
         }
     }
 }
